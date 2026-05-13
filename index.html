@@ -7,13 +7,14 @@
 
 <style>
 :root{
-  --bg:#080808;
-  --card:#121212;
-  --border:#242424;
-  --red:#ff3b3b;
-  --amber:#ffb347;
-  --text:#f5f5f5;
-  --muted:#8c8c8c;
+  --bg:#070707;
+  --card:rgba(255,255,255,.04);
+  --border:rgba(255,255,255,.08);
+  --red:#ff4d4d;
+  --amber:#ffb84d;
+  --green:#57ffb1;
+  --text:#f4f4f4;
+  --muted:#8d8d8d;
 }
 
 *{
@@ -29,31 +30,52 @@ body{
   overflow:hidden;
 }
 
+.bg-glow{
+  position:fixed;
+  width:500px;
+  height:500px;
+  background:radial-gradient(circle,
+    rgba(255,77,77,.18),
+    transparent 70%);
+  top:-120px;
+  right:-120px;
+  filter:blur(40px);
+  z-index:-1;
+  animation:floatGlow 8s ease-in-out infinite;
+}
+
+@keyframes floatGlow{
+  0%{transform:translateY(0px);}
+  50%{transform:translateY(40px);}
+  100%{transform:translateY(0px);}
+}
+
 .slider-track{
   display:flex;
   width:200vw;
-  transition:transform .35s ease;
+  transition:transform .45s cubic-bezier(.22,.61,.36,1);
 }
 
 .layer{
   width:100vw;
   height:100vh;
   overflow-y:auto;
-  padding-bottom:80px;
+  padding-bottom:100px;
 }
 
 .topbar{
   position:sticky;
   top:0;
   z-index:100;
-  background:rgba(8,8,8,.95);
+  background:rgba(10,10,10,.8);
+  backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
   padding:16px;
 }
 
 .topbar-title{
-  font-size:22px;
-  font-weight:700;
+  font-size:24px;
+  font-weight:800;
   color:var(--red);
   margin-bottom:12px;
 }
@@ -65,9 +87,9 @@ body{
 
 .toggle-btn{
   flex:1;
-  padding:10px;
   border:none;
-  border-radius:12px;
+  padding:11px;
+  border-radius:14px;
   background:#1a1a1a;
   color:var(--muted);
   font-weight:700;
@@ -78,18 +100,26 @@ body{
   color:white;
 }
 
+.swipe-hint{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--muted);
+}
+
 .layer-body{
-  padding:18px;
   max-width:900px;
   margin:auto;
+  padding:18px;
 }
 
 .card{
   background:var(--card);
+  backdrop-filter:blur(18px);
   border:1px solid var(--border);
-  border-radius:20px;
-  padding:18px;
+  border-radius:22px;
+  padding:20px;
   margin-bottom:18px;
+  box-shadow:0 10px 40px rgba(0,0,0,.35);
 }
 
 .section-title{
@@ -99,9 +129,8 @@ body{
   margin-bottom:18px;
 }
 
-.input-grid{
-  display:grid;
-  gap:18px;
+.slider-wrap{
+  margin-bottom:18px;
 }
 
 .slider-row{
@@ -128,8 +157,9 @@ input[type=range]{
 }
 
 .stat{
-  background:#1a1a1a;
-  border-radius:16px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:18px;
   padding:16px;
 }
 
@@ -141,39 +171,39 @@ input[type=range]{
 
 .stat-value{
   font-size:24px;
-  font-weight:700;
+  font-weight:800;
 }
 
 .freedom-box{
-  background:rgba(255,59,59,.08);
-  border:1px solid rgba(255,59,59,.2);
-  border-radius:18px;
+  background:rgba(255,77,77,.08);
+  border:1px solid rgba(255,77,77,.25);
+  border-radius:22px;
   padding:20px;
   display:flex;
-  gap:16px;
   align-items:center;
+  gap:16px;
   margin-bottom:18px;
 }
 
 .freedom-emoji{
-  font-size:42px;
+  font-size:48px;
 }
 
 .freedom-head{
-  font-size:28px;
-  font-weight:700;
+  font-size:30px;
+  font-weight:800;
   color:var(--red);
 }
 
 .freedom-sub{
-  font-size:14px;
+  margin-top:5px;
   color:#aaa;
-  margin-top:4px;
+  font-size:14px;
 }
 
 .progress{
-  height:12px;
-  background:#222;
+  height:14px;
+  background:#1f1f1f;
   border-radius:999px;
   overflow:hidden;
   margin-top:14px;
@@ -181,15 +211,23 @@ input[type=range]{
 
 .progress-fill{
   height:100%;
-  width:38%;
-  background:linear-gradient(90deg,var(--red),#ff7777);
+  background:linear-gradient(90deg,var(--green),var(--red));
+  width:0%;
+  transition:width .5s ease;
+}
+
+canvas{
+  width:100%;
+  margin-top:14px;
+  background:rgba(255,255,255,.02);
+  border-radius:14px;
 }
 
 .advice{
   display:flex;
   gap:10px;
   padding:12px 0;
-  border-bottom:1px solid #222;
+  border-bottom:1px solid rgba(255,255,255,.06);
   line-height:1.6;
   font-size:14px;
 }
@@ -197,247 +235,503 @@ input[type=range]{
 .advice:last-child{
   border:none;
 }
-
-.swipe{
-  margin-top:10px;
-  font-size:12px;
-  color:var(--muted);
-}
-
-@media(max-width:480px){
-  .stat-value{
-    font-size:20px;
-  }
-
-  .freedom-head{
-    font-size:22px;
-  }
-}
 </style>
 </head>
 
 <body>
 
+<div class="bg-glow"></div>
+
 <div class="slider-track" id="track">
 
-  <!-- INPUT LAYER -->
-  <div class="layer">
+<!-- INPUT -->
+<div class="layer">
 
-    <div class="topbar">
-      <div class="topbar-title">FREEDOM MODEL</div>
+<div class="topbar">
 
-      <div class="layer-toggle">
-        <button class="toggle-btn active" onclick="goTo(0)">
-          INPUT
-        </button>
+<div class="topbar-title">
+FREEDOM MODEL
+</div>
 
-        <button class="toggle-btn" onclick="goTo(1)">
-          OUTPUT
-        </button>
-      </div>
+<div class="layer-toggle">
+<button class="toggle-btn active" onclick="goTo(0)">
+INPUT
+</button>
 
-      <div class="swipe">
-        Swipe → Output
-      </div>
-    </div>
+<button class="toggle-btn" onclick="goTo(1)">
+OUTPUT
+</button>
+</div>
 
-    <div class="layer-body">
+<div class="swipe-hint">
+Swipe → Output
+</div>
 
-      <div class="card">
+</div>
 
-        <div class="section-title">
-          LIFE PARAMETERS
-        </div>
+<div class="layer-body">
 
-        <div class="input-grid">
+<div class="card">
 
-          <div>
-            <div class="slider-row">
-              <span>Current Age</span>
-              <span class="slider-value" id="ageVal">27</span>
-            </div>
+<div class="section-title">
+FINANCIAL INPUTS
+</div>
 
-            <input type="range" min="18" max="60" value="27" id="ageSlider">
-          </div>
+<div class="slider-wrap">
 
-          <div>
-            <div class="slider-row">
-              <span>Monthly Savings</span>
-              <span class="slider-value" id="saveVal">₹10,000</span>
-            </div>
+<div class="slider-row">
+<span>Current Age</span>
+<span class="slider-value" id="ageVal">27</span>
+</div>
 
-            <input type="range" min="1000" max="50000" value="10000" step="500" id="saveSlider">
-          </div>
+<input type="range"
+min="18"
+max="60"
+value="27"
+id="ageSlider">
 
-          <div>
-            <div class="slider-row">
-              <span>Expected Return</span>
-              <span class="slider-value" id="returnVal">10%</span>
-            </div>
+</div>
 
-            <input type="range" min="5" max="16" value="10" step="0.5" id="returnSlider">
-          </div>
+<div class="slider-wrap">
 
-        </div>
+<div class="slider-row">
+<span>Current Savings</span>
 
-      </div>
+<span class="slider-value" id="currentVal">
+₹2 L
+</span>
+</div>
 
-    </div>
+<input
+type="range"
+min="0"
+max="10000000"
+value="200000"
+step="50000"
+id="currentSlider">
 
-  </div>
+</div>
 
-  <!-- OUTPUT LAYER -->
-  <div class="layer">
+<div class="slider-wrap">
 
-    <div class="topbar">
-      <div class="topbar-title">FREEDOM MODEL</div>
+<div class="slider-row">
+<span>Monthly Savings</span>
 
-      <div class="layer-toggle">
-        <button class="toggle-btn" onclick="goTo(0)">
-          INPUT
-        </button>
+<span class="slider-value" id="saveVal">
+₹10,000
+</span>
+</div>
 
-        <button class="toggle-btn active" onclick="goTo(1)">
-          OUTPUT
-        </button>
-      </div>
+<input type="range"
+min="1000"
+max="100000"
+value="10000"
+step="500"
+id="saveSlider">
 
-      <div class="swipe">
-        ← Swipe to Input
-      </div>
-    </div>
+</div>
 
-    <div class="layer-body">
+<div class="slider-wrap">
 
-      <div class="output-grid">
+<div class="slider-row">
+<span>Expected Return</span>
 
-        <div class="stat">
-          <div class="stat-label">
-            TARGET SAVINGS
-          </div>
+<span class="slider-value" id="returnVal">
+10%
+</span>
+</div>
 
-          <div class="stat-value">
-            ₹1.82 Cr
-          </div>
-        </div>
+<input type="range"
+min="5"
+max="16"
+value="10"
+step="0.5"
+id="returnSlider">
 
-        <div class="stat">
-          <div class="stat-label">
-            CURRENT SAVINGS
-          </div>
+</div>
 
-          <div class="stat-value">
-            ₹1.9 L
-          </div>
-        </div>
+<div class="slider-wrap">
 
-        <div class="stat">
-          <div class="stat-label">
-            GAP TO BRIDGE
-          </div>
+<div class="slider-row">
+<span>Target Corpus</span>
 
-          <div class="stat-value">
-            ₹1.80 Cr
-          </div>
-        </div>
+<span class="slider-value" id="targetVal">
+₹2 Cr
+</span>
+</div>
 
-        <div class="stat">
-          <div class="stat-label">
-            FREEDOM AGE
-          </div>
+<input type="range"
+min="5000000"
+max="100000000"
+value="20000000"
+step="500000"
+id="targetSlider">
 
-          <div class="stat-value">
-            52
-          </div>
-        </div>
+</div>
 
-      </div>
+</div>
 
-      <div class="freedom-box">
+</div>
 
-        <div class="freedom-emoji">
-          🎯
-        </div>
+</div>
 
-        <div>
-          <div class="freedom-head">
-            Freedom at Age 52
-          </div>
+<!-- OUTPUT -->
+<div class="layer">
 
-          <div class="freedom-sub">
-            Your projected savings cross your target corpus at age 52.
-          </div>
-        </div>
+<div class="topbar">
 
-      </div>
+<div class="topbar-title">
+FREEDOM MODEL
+</div>
 
-      <div class="card">
+<div class="layer-toggle">
+<button class="toggle-btn" onclick="goTo(0)">
+INPUT
+</button>
 
-        <div class="section-title">
-          SAVINGS PROGRESS
-        </div>
+<button class="toggle-btn active" onclick="goTo(1)">
+OUTPUT
+</button>
+</div>
 
-        <div class="progress">
-          <div class="progress-fill"></div>
-        </div>
+<div class="swipe-hint">
+← Swipe to Input
+</div>
 
-      </div>
+</div>
 
-      <div class="card">
+<div class="layer-body">
 
-        <div class="section-title">
-          MATHEMATICAL INSIGHTS
-        </div>
+<div class="output-grid">
 
-        <div class="advice">
-          <span>📌</span>
-          <span>
-            Consistent monthly investing has a larger impact than timing the market.
-          </span>
-        </div>
+<div class="stat">
+<div class="stat-label">
+TARGET SAVINGS
+</div>
 
-        <div class="advice">
-          <span>📌</span>
-          <span>
-            Salary hikes redirected into investments dramatically accelerate freedom age.
-          </span>
-        </div>
+<div class="stat-value" id="targetOut">
+₹2 Cr
+</div>
+</div>
 
-        <div class="advice">
-          <span>💡</span>
-          <span>
-            Long-term compounding becomes exponential after the 15-year mark.
-          </span>
-        </div>
+<div class="stat">
+<div class="stat-label">
+PROJECTED WEALTH
+</div>
 
-      </div>
+<div class="stat-value" id="wealthOut">
+₹0
+</div>
+</div>
 
-    </div>
+<div class="stat">
+<div class="stat-label">
+GAP TO BRIDGE
+</div>
 
-  </div>
+<div class="stat-value" id="gapOut">
+₹0
+</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">
+FREEDOM AGE
+</div>
+
+<div class="stat-value" id="freedomOut">
+52
+</div>
+</div>
+
+</div>
+
+<div class="freedom-box">
+
+<div class="freedom-emoji">
+🎯
+</div>
+
+<div>
+
+<div class="freedom-head" id="headline">
+Freedom at Age 52
+</div>
+
+<div class="freedom-sub" id="subline">
+Your investments cross the target corpus at age 52.
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+SAVINGS PROGRESS
+</div>
+
+<div class="progress">
+<div class="progress-fill" id="progressFill"></div>
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+WEALTH JOURNEY
+</div>
+
+<canvas id="chart" width="800" height="220"></canvas>
+
+</div>
+
+<div class="card">
+
+<div class="section-title">
+MATHEMATICAL INSIGHTS
+</div>
+
+<div class="advice">
+<span>📌</span>
+<span>
+Increasing monthly investments early creates exponential compounding advantages.
+</span>
+</div>
+
+<div class="advice">
+<span>📌</span>
+<span>
+Long-term consistency matters more than timing the market.
+</span>
+</div>
+
+<div class="advice">
+<span>💡</span>
+<span>
+Wealth acceleration becomes dramatic after the 15-year compounding mark.
+</span>
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </div>
 
 <script>
+
 function goTo(i){
-  document.getElementById('track').style.transform =
-    `translateX(-${i * 100}vw)`;
+document.getElementById('track').style.transform =
+`translateX(-${i * 100}vw)`;
 }
 
-document.getElementById('ageSlider').addEventListener('input',e=>{
-  document.getElementById('ageVal').innerText =
-    e.target.value;
+const ageSlider =
+document.getElementById('ageSlider');
+
+const currentSlider =
+document.getElementById('currentSlider');
+
+const saveSlider =
+document.getElementById('saveSlider');
+
+const returnSlider =
+document.getElementById('returnSlider');
+
+const targetSlider =
+document.getElementById('targetSlider');
+
+function formatINR(num){
+
+if(num >= 10000000){
+return '₹' + (num / 10000000).toFixed(2) + ' Cr';
+}
+
+if(num >= 100000){
+return '₹' + (num / 100000).toFixed(1) + ' L';
+}
+
+return '₹' + Math.round(num).toLocaleString('en-IN');
+}
+
+function calculate(){
+
+const age =
+Number(ageSlider.value);
+
+const current =
+Number(currentSlider.value);
+
+const monthly =
+Number(saveSlider.value);
+
+const rate =
+Number(returnSlider.value);
+
+const target =
+Number(targetSlider.value);
+
+document.getElementById('ageVal').innerText =
+age;
+
+document.getElementById('currentVal').innerText =
+formatINR(current);
+
+document.getElementById('saveVal').innerText =
+formatINR(monthly);
+
+document.getElementById('returnVal').innerText =
+rate + '%';
+
+document.getElementById('targetVal').innerText =
+formatINR(target);
+
+let wealth = current;
+
+let freedomAge = null;
+
+let yearlyData = [];
+
+for(let y = age; y <= 60; y++){
+
+wealth =
+wealth * (1 + rate / 100) +
+(monthly * 12);
+
+yearlyData.push({
+age:y,
+wealth:wealth
 });
 
-document.getElementById('saveSlider').addEventListener('input',e=>{
-  document.getElementById('saveVal').innerText =
-    '₹' + Number(e.target.value).toLocaleString('en-IN');
+if(!freedomAge && wealth >= target){
+freedomAge = y;
+}
+
+}
+
+const gap =
+Math.max(0, target - wealth);
+
+document.getElementById('targetOut').innerText =
+formatINR(target);
+
+document.getElementById('wealthOut').innerText =
+formatINR(wealth);
+
+document.getElementById('gapOut').innerText =
+formatINR(gap);
+
+document.getElementById('freedomOut').innerText =
+freedomAge || '—';
+
+document.getElementById('headline').innerText =
+freedomAge
+? `Freedom at Age ${freedomAge}`
+: 'Target Not Reached';
+
+document.getElementById('subline').innerText =
+freedomAge
+? 'Your investments cross the target corpus successfully.'
+: 'Increase investments or returns to close the gap.';
+
+const progress =
+Math.min(100, (wealth / target) * 100);
+
+document.getElementById('progressFill').style.width =
+progress + '%';
+
+drawChart(yearlyData,target);
+
+}
+
+function drawChart(data,target){
+
+const canvas =
+document.getElementById('chart');
+
+const ctx =
+canvas.getContext('2d');
+
+const width =
+canvas.width;
+
+const height =
+canvas.height;
+
+ctx.clearRect(0,0,width,height);
+
+const max =
+Math.max(
+target,
+...data.map(d=>d.wealth)
+);
+
+ctx.beginPath();
+
+ctx.strokeStyle =
+'#57ffb1';
+
+ctx.lineWidth = 4;
+
+data.forEach((d,i)=>{
+
+const x =
+(i / (data.length - 1)) * width;
+
+const y =
+height -
+((d.wealth / max) * (height - 30));
+
+if(i === 0){
+ctx.moveTo(x,y);
+}else{
+ctx.lineTo(x,y);
+}
+
 });
 
-document.getElementById('returnSlider').addEventListener('input',e=>{
-  document.getElementById('returnVal').innerText =
-    e.target.value + '%';
-});
+ctx.stroke();
+
+const targetY =
+height -
+((target / max) * (height - 30));
+
+ctx.beginPath();
+
+ctx.setLineDash([8,8]);
+
+ctx.strokeStyle =
+'#ffb84d';
+
+ctx.moveTo(0,targetY);
+
+ctx.lineTo(width,targetY);
+
+ctx.stroke();
+
+ctx.setLineDash([]);
+
+}
+
+ageSlider.addEventListener('input',calculate);
+
+currentSlider.addEventListener(
+'input',
+calculate
+);
+
+saveSlider.addEventListener('input',calculate);
+
+returnSlider.addEventListener('input',calculate);
+
+targetSlider.addEventListener('input',calculate);
+
+calculate();
+
 </script>
 
 </body>
