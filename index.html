@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freedom Model</title>
+
+<meta name="theme-color" content="#0a0000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+:root{
+  --bg:#0a0000;
+  --surface:#140000;
+  --border:#341010;
+  --red:#ff2b2b;
+  --amber:#ff9a3c;
+  --text:#f3dede;
+  --muted:#9b6666;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+  overflow-x:hidden;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:100;
+  background:rgba(10,0,0,.95);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px;
+}
+
+.topbar-title{
+  font-size:24px;
+  font-weight:700;
+  color:var(--red);
+  letter-spacing:1px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:18px;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:18px;
+}
+
+.section-title{
+  font-size:14px;
+  letter-spacing:1px;
+  color:var(--muted);
+  margin-bottom:14px;
+}
+
+.hero-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:12px;
+}
+
+.stat{
+  background:#1c0000;
+  border-radius:14px;
+  padding:14px;
+  border:1px solid #411;
+}
+
+.stat-label{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+.stat-value{
+  font-size:24px;
+  font-weight:700;
+}
+
+.slider-wrap{
+  margin-bottom:18px;
+}
+
+.slider-row{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  font-size:14px;
+}
+
+.slider-value{
+  color:var(--red);
+  font-weight:700;
+}
+
+input[type=range]{
+  width:100%;
+  accent-color:var(--red);
+}
+
+.progress{
+  height:12px;
+  background:#220000;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:12px;
+}
+
+.progress-fill{
+  height:100%;
+  width:35%;
+  background:linear-gradient(90deg,var(--red),#ff5b5b);
+}
+
+.freedom-box{
+  background:rgba(255,43,43,.08);
+  border:1px solid rgba(255,43,43,.3);
+  border-radius:18px;
+  padding:20px;
+  display:flex;
+  gap:16px;
+  align-items:center;
+}
+
+.freedom-emoji{
+  font-size:42px;
+}
+
+.freedom-head{
+  font-size:28px;
+  color:var(--red);
+  font-weight:700;
+}
+
+.freedom-sub{
+  margin-top:4px;
+  color:#b88;
+  font-size:14px;
+}
+
+.advice{
+  display:flex;
+  gap:10px;
+  padding:12px 0;
+  border-bottom:1px solid #241010;
+  font-size:14px;
+  line-height:1.6;
+}
+
+.advice:last-child{
+  border:none;
+}
+
+canvas{
+  width:100%;
+  margin-top:14px;
+}
+
+@media(max-width:480px){
+  .stat-value{
+    font-size:20px;
+  }
+
+  .freedom-head{
+    font-size:22px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">FREEDOM MODEL</div>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="section-title">FINANCIAL SNAPSHOT</div>
+
+    <div class="hero-grid">
+
+      <div class="stat">
+        <div class="stat-label">TARGET SAVINGS</div>
+        <div class="stat-value">₹1.82 Cr</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">CURRENT SAVINGS</div>
+        <div class="stat-value">₹1.9 L</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">GAP TO BRIDGE</div>
+        <div class="stat-value">₹1.80 Cr</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">FREEDOM AGE</div>
+        <div class="stat-value">52</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="freedom-box card">
+    <div class="freedom-emoji">🎯</div>
+
+    <div>
+      <div class="freedom-head">
+        Freedom at Age 52
+      </div>
+
+      <div class="freedom-sub">
+        Your projected savings cross the required target at age 52.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <div class="section-title">
+      MONTHLY SAVINGS INPUT
+    </div>
+
+    <div class="slider-wrap">
+      <div class="slider-row">
+        <span>Monthly Savings</span>
+        <span class="slider-value" id="saveVal">₹10,000</span>
+      </div>
+
+      <input
+        type="range"
+        min="1000"
+        max="50000"
+        value="10000"
+        step="500"
+        id="saveSlider"
+      >
+    </div>
+
+    <div class="slider-wrap">
+      <div class="slider-row">
+        <span>Expected Return</span>
+        <span class="slider-value" id="returnVal">10%</span>
+      </div>
+
+      <input
+        type="range"
+        min="5"
+        max="16"
+        value="10"
+        step="0.5"
+        id="returnSlider"
+      >
+    </div>
+
+    <div class="progress">
+      <div class="progress-fill"></div>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="section-title">
+      MATHEMATICAL INSIGHTS
+    </div>
+
+    <div class="advice">
+      <span>📌</span>
+      <span>
+        Consistency matters more than timing. Missing SIP contributions delays freedom significantly.
+      </span>
+    </div>
+
+    <div class="advice">
+      <span>📌</span>
+      <span>
+        Increasing savings after salary hikes dramatically accelerates compounding.
+      </span>
+    </div>
+
+    <div class="advice">
+      <span>💡</span>
+      <span>
+        Even a 1% increase in long-term returns creates a major difference over 30 years.
+      </span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const saveSlider = document.getElementById('saveSlider');
+const returnSlider = document.getElementById('returnSlider');
+
+saveSlider.addEventListener('input',()=>{
+  document.getElementById('saveVal').innerText =
+    '₹' + Number(saveSlider.value).toLocaleString('en-IN');
+});
+
+returnSlider.addEventListener('input',()=>{
+  document.getElementById('returnVal').innerText =
+    returnSlider.value + '%';
+});
+</script>
+
+</body>
+</html>
