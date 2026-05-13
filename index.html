@@ -6,6 +6,7 @@
 <title>Freedom Model</title>
 
 <style>
+
 :root{
   --bg:#070707;
   --card:rgba(255,255,255,.04);
@@ -35,7 +36,7 @@ body{
   width:500px;
   height:500px;
   background:radial-gradient(circle,
-    rgba(255,77,77,.18),
+    rgba(255,77,77,.16),
     transparent 70%);
   top:-120px;
   right:-120px;
@@ -223,18 +224,6 @@ canvas{
   border-radius:14px;
 }
 
-.advice{
-  display:flex;
-  gap:10px;
-  padding:12px 0;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  line-height:1.6;
-  font-size:14px;
-}
-
-.advice:last-child{
-  border:none;
-}
 </style>
 </head>
 
@@ -244,7 +233,8 @@ canvas{
 
 <div class="slider-track" id="track">
 
-<!-- INPUT -->
+<!-- INPUT PAGE -->
+
 <div class="layer">
 
 <div class="topbar">
@@ -254,6 +244,7 @@ FREEDOM MODEL
 </div>
 
 <div class="layer-toggle">
+
 <button class="toggle-btn active" onclick="goTo(0)">
 INPUT
 </button>
@@ -261,6 +252,7 @@ INPUT
 <button class="toggle-btn" onclick="goTo(1)">
 OUTPUT
 </button>
+
 </div>
 
 <div class="swipe-hint">
@@ -281,10 +273,7 @@ LIFESTYLE PARAMETERS
 
 <div class="slider-row">
 <span>Current Age</span>
-
-<span class="slider-value" id="ageVal">
-27
-</span>
+<span class="slider-value" id="ageVal">27</span>
 </div>
 
 <input type="range"
@@ -298,11 +287,23 @@ id="ageSlider">
 <div class="slider-wrap">
 
 <div class="slider-row">
-<span>Current Savings</span>
+<span>Life Expectancy</span>
+<span class="slider-value" id="lifeVal">85</span>
+</div>
 
-<span class="slider-value" id="currentVal">
-₹2.0 L
-</span>
+<input type="range"
+min="60"
+max="100"
+value="85"
+id="lifeSlider">
+
+</div>
+
+<div class="slider-wrap">
+
+<div class="slider-row">
+<span>Current Savings</span>
+<span class="slider-value" id="currentVal">₹2.0 L</span>
 </div>
 
 <input type="range"
@@ -318,10 +319,7 @@ id="currentSlider">
 
 <div class="slider-row">
 <span>Monthly Cash Outflow (Now)</span>
-
-<span class="slider-value" id="expense1Val">
-₹35,000
-</span>
+<span class="slider-value" id="expense1Val">₹35,000</span>
 </div>
 
 <input type="range"
@@ -337,10 +335,7 @@ id="expense1Slider">
 
 <div class="slider-row">
 <span>Expense Shift Age</span>
-
-<span class="slider-value" id="shiftVal">
-30
-</span>
+<span class="slider-value" id="shiftVal">30</span>
 </div>
 
 <input type="range"
@@ -356,16 +351,13 @@ id="shiftSlider">
 
 <div class="slider-row">
 <span>Monthly Cash Outflow (After Shift)</span>
-
-<span class="slider-value" id="expense2Val">
-₹70,000
-</span>
+<span class="slider-value" id="expense2Val">₹60,000</span>
 </div>
 
 <input type="range"
 min="20000"
 max="500000"
-value="70000"
+value="60000"
 step="5000"
 id="expense2Slider">
 
@@ -375,10 +367,7 @@ id="expense2Slider">
 
 <div class="slider-row">
 <span>Annual Expense Inflation</span>
-
-<span class="slider-value" id="inflationVal">
-6%
-</span>
+<span class="slider-value" id="inflationVal">6%</span>
 </div>
 
 <input type="range"
@@ -394,10 +383,7 @@ id="inflationSlider">
 
 <div class="slider-row">
 <span>Expected Investment Return</span>
-
-<span class="slider-value" id="returnVal">
-10%
-</span>
+<span class="slider-value" id="returnVal">10%</span>
 </div>
 
 <input type="range"
@@ -415,7 +401,8 @@ id="returnSlider">
 
 </div>
 
-<!-- OUTPUT -->
+<!-- OUTPUT PAGE -->
+
 <div class="layer">
 
 <div class="topbar">
@@ -425,6 +412,7 @@ FREEDOM MODEL
 </div>
 
 <div class="layer-toggle">
+
 <button class="toggle-btn" onclick="goTo(0)">
 INPUT
 </button>
@@ -432,6 +420,7 @@ INPUT
 <button class="toggle-btn active" onclick="goTo(1)">
 OUTPUT
 </button>
+
 </div>
 
 <div class="swipe-hint">
@@ -499,7 +488,7 @@ Calculating Freedom...
 </div>
 
 <div class="freedom-sub" id="subline">
-Your lifestyle requirements determine your freedom number.
+Projected financial independence based on lifestyle needs.
 </div>
 
 </div>
@@ -528,35 +517,6 @@ WEALTH VS TARGET
 
 </div>
 
-<div class="card">
-
-<div class="section-title">
-MATHEMATICAL INSIGHTS
-</div>
-
-<div class="advice">
-<span>📌</span>
-<span>
-Your future lifestyle has the biggest impact on your required freedom corpus.
-</span>
-</div>
-
-<div class="advice">
-<span>📌</span>
-<span>
-Inflation silently compounds your future monthly cash outflows over decades.
-</span>
-</div>
-
-<div class="advice">
-<span>💡</span>
-<span>
-Reducing future lifestyle inflation by even ₹10k/month can reduce the target corpus massively.
-</span>
-</div>
-
-</div>
-
 </div>
 
 </div>
@@ -572,6 +532,9 @@ document.getElementById('track').style.transform =
 
 const ageSlider =
 document.getElementById('ageSlider');
+
+const lifeSlider =
+document.getElementById('lifeSlider');
 
 const currentSlider =
 document.getElementById('currentSlider');
@@ -602,12 +565,16 @@ return '₹' + (num / 100000).toFixed(1) + ' L';
 }
 
 return '₹' + Math.round(num).toLocaleString('en-IN');
+
 }
 
 function calculate(){
 
 const age =
 Number(ageSlider.value);
+
+const life =
+Number(lifeSlider.value);
 
 const current =
 Number(currentSlider.value);
@@ -627,56 +594,29 @@ Number(inflationSlider.value);
 const returnRate =
 Number(returnSlider.value);
 
-document.getElementById('ageVal').innerText =
-age;
+document.getElementById('ageVal').innerText = age;
+document.getElementById('lifeVal').innerText = life;
+document.getElementById('currentVal').innerText = formatINR(current);
+document.getElementById('expense1Val').innerText = formatINR(expense1);
+document.getElementById('shiftVal').innerText = shiftAge;
+document.getElementById('expense2Val').innerText = formatINR(expense2);
+document.getElementById('inflationVal').innerText = inflation + '%';
+document.getElementById('returnVal').innerText = returnRate + '%';
 
-document.getElementById('currentVal').innerText =
-formatINR(current);
-
-document.getElementById('expense1Val').innerText =
-formatINR(expense1);
-
-document.getElementById('shiftVal').innerText =
-shiftAge;
-
-document.getElementById('expense2Val').innerText =
-formatINR(expense2);
-
-document.getElementById('inflationVal').innerText =
-inflation + '%';
-
-document.getElementById('returnVal').innerText =
-returnRate + '%';
-
-const years =
-85 - age;
-
-let targetCorpus = 0;
-
-for(let y=0; y<years; y++){
-
-const actualAge =
-age + y;
-
-const monthly =
-actualAge < shiftAge
-? expense1
-: expense2;
-
-const inflated =
-monthly *
+const futureMonthlyExpense =
+expense2 *
 Math.pow(
 1 + inflation / 100,
-y
+shiftAge - age
 );
 
-targetCorpus +=
-inflated * 12;
+const annualExpense =
+futureMonthlyExpense * 12;
 
-}
+const safeWithdrawalRate = 0.04;
 
-targetCorpus =
-targetCorpus / (returnRate / 100);
+const targetCorpus =
+annualExpense / safeWithdrawalRate;
 
 let wealth =
 current;
@@ -685,26 +625,38 @@ let yearlyData = [];
 
 let freedomAge = null;
 
-for(let y=age; y<=85; y++){
+const annualInvestment =
+expense1 * 3;
+
+for(let y = age; y <= life; y++){
 
 wealth =
+(
 wealth *
-(1 + returnRate / 100);
+(1 + returnRate / 100)
+)
++
+annualInvestment;
 
 yearlyData.push({
 age:y,
 wealth:wealth
 });
 
-if(!freedomAge &&
-wealth >= targetCorpus){
+if(
+!freedomAge &&
+wealth >= targetCorpus
+){
 freedomAge = y;
 }
 
 }
 
 const gap =
-Math.max(0, targetCorpus - wealth);
+Math.max(
+0,
+targetCorpus - wealth
+);
 
 document.getElementById('targetOut').innerText =
 formatINR(targetCorpus);
@@ -725,8 +677,8 @@ freedomAge
 
 document.getElementById('subline').innerText =
 freedomAge
-? 'Your current wealth can sustain your projected lifestyle.'
-: 'Current savings are insufficient for future projected withdrawals.';
+? 'Your investments can sustain your future lifestyle.'
+: 'Your projected wealth does not yet sustain future withdrawals.';
 
 const progress =
 Math.min(
@@ -737,7 +689,10 @@ Math.min(
 document.getElementById('progressFill').style.width =
 progress + '%';
 
-drawChart(yearlyData,targetCorpus);
+drawChart(
+yearlyData,
+targetCorpus
+);
 
 }
 
@@ -811,6 +766,7 @@ ctx.setLineDash([]);
 }
 
 ageSlider.addEventListener('input',calculate);
+lifeSlider.addEventListener('input',calculate);
 currentSlider.addEventListener('input',calculate);
 expense1Slider.addEventListener('input',calculate);
 shiftSlider.addEventListener('input',calculate);
