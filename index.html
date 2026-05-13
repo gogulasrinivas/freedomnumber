@@ -1,330 +1,508 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Freedom Model</title>
+import { useState, useMemo } from “react”;
 
-<meta name="theme-color" content="#0a0000">
-<meta name="apple-mobile-web-app-capable" content="yes">
+// ── helpers ──────────────────────────────────────────────────────────────────
+const INR = (n) => {
+if (Math.abs(n) >= 1e7) return `₹${(n / 1e7).toFixed(2)} Cr`;
+if (Math.abs(n) >= 1e5) return `₹${(n / 1e5).toFixed(2)} L`;
+return `₹${Math.round(n).toLocaleString("en-IN")}`;
+};
+const INRfull = (n) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
-<style>
-:root{
-  --bg:#0a0000;
-  --surface:#140000;
-  --border:#341010;
-  --red:#ff2b2b;
-  --amber:#ff9a3c;
-  --text:#f3dede;
-  --muted:#9b6666;
+// compound growth of lump sum + monthly SIP for N months
+function futureValue(principal, monthly, annualRate, months) {
+const r = annualRate / 100 / 12;
+if (r === 0) return principal + monthly * months;
+const fvLump = principal * Math.pow(1 + r, months);
+const fvSIP = monthly * ((Math.pow(1 + r, months) - 1) / r) * (1 + r);
+return fvLump + fvSIP;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+// present value of a stream of future monthly cashflows discounted at rate
+function presentValueOfStream(cashflows, annualDiscountRate) {
+const r = annualDiscountRate / 100 / 12;
+return cashflows.reduce((sum, cf, i) => sum + cf / Math.pow(1 + r, i + 1), 0);
 }
 
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,sans-serif;
-  overflow-x:hidden;
-  padding-bottom:env(safe-area-inset-bottom);
+const TABS = [“Layer 1 — SWP”, “Layer 2 — Target Corpus”, “Layer 3 — Your Wealth Journey”];
+
+export default function FreedomModel() {
+// ── inputs ────────────────────────────────────────────────────────────────
+const [currentAge] = useState(27);
+const [lifeExpectancy, setLifeExpectancy] = useState(85);
+const [currentExpenses, setCurrentExpenses] = useState(33000);   // monthly now
+const [futureExpenses, setFutureExpenses] = useState(55000);      // after roommates leave
+const [expenseShiftAge, setExpenseShiftAge] = useState(29);       // when expenses jump
+const [inflation, setInflation] = useState(6);                    // % annual
+const [swpReturn, setSwpReturn] = useState(10);                   // corpus earns this
+const [discountRate, setDiscountRate] = useState(8);              // for PV calc
+const [currentWealth, setCurrentWealth] = useState(190000);       // NPS+PF today
+const [monthlySaving, setMonthlySaving] = useState(10000);        // NPS Tier 2
+const [wealthReturn, setWealthReturn] = useState(10);             // your portfolio return
+const [lumpSum, setLumpSum] = useState(0);                        // one-time boost
+const [salaryHike, setSalaryHike] = useState(0);                  // extra monthly after hike
+const [hikeAge, setHikeAge] = useState(27);
+
+const [activeTab, setActiveTab] = useState(0);
+
+const totalYears = lifeExpectancy - currentAge;
+const totalMonths = totalYears * 12;
+
+// ── Layer 1: SWP cashflow stream (inflation-adjusted) ────────────────────
+const swpStream = useMemo(() => {
+const stream = [];
+for (let m = 0; m < totalMonths; m++) {
+const age = currentAge + m / 12;
+const base = age < expenseShiftAge ? currentExpenses : futureExpenses;
+const inflated = base * Math.pow(1 + inflation / 100, m / 12);
+stream.push(Math.round(inflated));
+}
+return stream;
+}, [currentAge, lifeExpectancy, currentExpenses, futureExpenses, expenseShiftAge, inflation, totalMonths]);
+
+// ── Layer 2: PV of all future cashflows = corpus needed TODAY ─────────────
+const targetCorpus = useMemo(() => presentValueOfStream(swpStream, discountRate), [swpStream, discountRate]);
+
+// ── Layer 3: Wealth journey ───────────────────────────────────────────────
+const wealthJourney = useMemo(() => {
+const points = [];
+const r = wealthReturn / 100 / 12;
+let bal = currentWealth + lumpSum;
+for (let m = 0; m <= totalMonths; m++) {
+const age = currentAge + m / 12;
+const extra = age >= hikeAge && m > 0 ? salaryHike : 0;
+const monthly = monthlySaving + extra;
+if (m > 0) bal = bal * (1 + r) + monthly;
+if (m % 12 === 0) points.push({ age: Math.round(age), bal: Math.round(bal), month: m });
+}
+return points;
+}, [currentWealth, lumpSum, monthlySaving, salaryHike, hikeAge, wealthReturn, totalMonths, currentAge]);
+
+const finalWealth = wealthJourney[wealthJourney.length - 1]?.bal ?? 0;
+const gap = targetCorpus - (currentWealth + lumpSum);
+const freedomYear = wealthJourney.find((p) => p.bal >= targetCorpus);
+const freedomAge = freedomYear?.age ?? null;
+
+// corpus depletion simulation for SWP chart
+const corpusDepletion = useMemo(() => {
+const r = swpReturn / 100 / 12;
+let bal = targetCorpus;
+const pts = [];
+for (let m = 0; m < totalMonths; m++) {
+bal = bal * (1 + r) - swpStream[m];
+if (m % 12 === 0) pts.push({ age: currentAge + Math.round(m / 12), bal: Math.max(0, Math.round(bal)) });
+}
+return pts;
+}, [targetCorpus, swpStream, swpReturn, totalMonths, currentAge]);
+
+// SVG chart helper
+function LineChart({ data, yKey, xKey = “age”, color, height = 180, showZero = false }) {
+if (!data?.length) return null;
+const vals = data.map((d) => d[yKey]);
+const xs = data.map((d) => d[xKey]);
+const minY = showZero ? 0 : Math.min(…vals);
+const maxY = Math.max(…vals, 1);
+const W = 600, H = height;
+const px = (i) => (i / (data.length - 1)) * W;
+const py = (v) => H - ((v - minY) / (maxY - minY)) * (H - 10) - 5;
+const pts = data.map((d, i) => `${px(i)},${py(d[yKey])}`).join(” “);
+// area fill
+const area = `${px(0)},${H} ` + data.map((d, i) => `${px(i)},${py(d[yKey])}`).join(” “) + ` ${px(data.length - 1)},${H}`;
+
+```
+// x axis labels
+const step = Math.ceil(data.length / 8);
+const labels = data.filter((_, i) => i % step === 0 || i === data.length - 1);
+
+return (
+  <svg viewBox={`0 0 ${W} ${H + 24}`} style={{ width: "100%", height: "auto", display: "block" }}>
+    <defs>
+      <linearGradient id={`grad-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+        <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+      </linearGradient>
+    </defs>
+    <polygon points={area} fill={`url(#grad-${color.replace("#","")})`} />
+    <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+    {labels.map((d, i) => (
+      <text key={i} x={px(data.indexOf(d))} y={H + 18} textAnchor="middle" fontSize="9" fill="#666">{d[xKey]}</text>
+    ))}
+  </svg>
+);
+```
+
 }
 
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:rgba(10,0,0,.95);
-  backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--border);
-  padding:14px 18px;
+function Card({ children, style = {} }) {
+return (
+<div style={{
+background: “rgba(255,255,255,0.03)”,
+border: “1px solid rgba(255,255,255,0.08)”,
+borderRadius: 16,
+padding: 24,
+…style
+}}>{children}</div>
+);
 }
 
-.topbar-title{
-  font-size:24px;
-  font-weight:700;
-  color:var(--red);
-  letter-spacing:1px;
+function Label({ children }) {
+return <div style={{ fontSize: 11, letterSpacing: “0.1em”, textTransform: “uppercase”, color: “#666”, marginBottom: 6 }}>{children}</div>;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:18px;
+function BigNum({ value, color = “#e8f84a” }) {
+return <div style={{ fontSize: 32, fontWeight: 800, color, fontFamily: “‘Courier New’, monospace”, lineHeight: 1 }}>{value}</div>;
 }
 
-.card{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:18px;
-  margin-bottom:18px;
+function Slider({ label, value, min, max, step = 1, suffix = “”, onChange }) {
+return (
+<div style={{ marginBottom: 16 }}>
+<div style={{ display: “flex”, justifyContent: “space-between”, marginBottom: 4 }}>
+<span style={{ fontSize: 13, color: “#aaa” }}>{label}</span>
+<span style={{ fontSize: 13, color: “#e8f84a”, fontFamily: “monospace” }}>{typeof value === “number” && value >= 1000 ? INRfull(value) : value}{suffix}</span>
+</div>
+<input type=“range” min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))}
+style={{ width: “100%”, accentColor: “#e8f84a” }} />
+</div>
+);
 }
 
-.section-title{
-  font-size:14px;
-  letter-spacing:1px;
-  color:var(--muted);
-  margin-bottom:14px;
-}
+const monthlyNeededNow = swpStream[0];
+const monthlyNeededAt60 = swpStream[(60 - currentAge) * 12] ?? swpStream[swpStream.length - 1];
 
-.hero-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:12px;
-}
-
-.stat{
-  background:#1c0000;
-  border-radius:14px;
-  padding:14px;
-  border:1px solid #411;
-}
-
-.stat-label{
-  font-size:11px;
-  color:var(--muted);
-  margin-bottom:8px;
-}
-
-.stat-value{
-  font-size:24px;
-  font-weight:700;
-}
-
-.slider-wrap{
-  margin-bottom:18px;
-}
-
-.slider-row{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:8px;
-  font-size:14px;
-}
-
-.slider-value{
-  color:var(--red);
-  font-weight:700;
-}
-
-input[type=range]{
-  width:100%;
-  accent-color:var(--red);
-}
-
-.progress{
-  height:12px;
-  background:#220000;
-  border-radius:999px;
-  overflow:hidden;
-  margin-top:12px;
-}
-
-.progress-fill{
-  height:100%;
-  width:35%;
-  background:linear-gradient(90deg,var(--red),#ff5b5b);
-}
-
-.freedom-box{
-  background:rgba(255,43,43,.08);
-  border:1px solid rgba(255,43,43,.3);
-  border-radius:18px;
-  padding:20px;
-  display:flex;
-  gap:16px;
-  align-items:center;
-}
-
-.freedom-emoji{
-  font-size:42px;
-}
-
-.freedom-head{
-  font-size:28px;
-  color:var(--red);
-  font-weight:700;
-}
-
-.freedom-sub{
-  margin-top:4px;
-  color:#b88;
-  font-size:14px;
-}
-
-.advice{
-  display:flex;
-  gap:10px;
-  padding:12px 0;
-  border-bottom:1px solid #241010;
-  font-size:14px;
-  line-height:1.6;
-}
-
-.advice:last-child{
-  border:none;
-}
-
-canvas{
-  width:100%;
-  margin-top:14px;
-}
-
-@media(max-width:480px){
-  .stat-value{
-    font-size:20px;
-  }
-
-  .freedom-head{
-    font-size:22px;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<div class="topbar">
-  <div class="topbar-title">FREEDOM MODEL</div>
+return (
+<div style={{
+minHeight: “100vh”,
+background: “#080c0a”,
+color: “#e0e8e2”,
+fontFamily: “‘Georgia’, serif”,
+padding: “0 0 80px”,
+}}>
+{/* hero header */}
+<div style={{
+padding: “40px 32px 32px”,
+borderBottom: “1px solid rgba(255,255,255,0.07)”,
+background: “linear-gradient(180deg, rgba(40,80,40,0.18) 0%, transparent 100%)”,
+}}>
+<div style={{ fontSize: 11, letterSpacing: “0.2em”, color: “#5a8a5a”, textTransform: “uppercase”, marginBottom: 8 }}>Financial Freedom Model</div>
+<div style={{ fontSize: 36, fontWeight: 900, letterSpacing: “-0.03em”, lineHeight: 1.1, fontFamily: “‘Georgia’, serif” }}>
+Escape the<br /><span style={{ color: “#e8f84a” }}>Corporate Trap</span>
+</div>
+<div style={{ fontSize: 14, color: “#666”, marginTop: 12 }}>
+Age {currentAge} → {lifeExpectancy}  ·  {totalYears} years of freedom  ·  Built around your life
 </div>
 
-<div class="container">
-
-  <div class="card">
-    <div class="section-title">FINANCIAL SNAPSHOT</div>
-
-    <div class="hero-grid">
-
-      <div class="stat">
-        <div class="stat-label">TARGET SAVINGS</div>
-        <div class="stat-value">₹1.82 Cr</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-label">CURRENT SAVINGS</div>
-        <div class="stat-value">₹1.9 L</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-label">GAP TO BRIDGE</div>
-        <div class="stat-value">₹1.80 Cr</div>
-      </div>
-
-      <div class="stat">
-        <div class="stat-label">FREEDOM AGE</div>
-        <div class="stat-value">52</div>
-      </div>
-
+```
+    {/* top-line numbers */}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginTop: 28 }}>
+      {[
+        { label: "Target Corpus Today", value: INR(targetCorpus), color: "#e8f84a" },
+        { label: "Current Wealth", value: INR(currentWealth), color: "#5cffc0" },
+        { label: "Gap to Bridge", value: INR(targetCorpus - currentWealth), color: "#ff7c5c" },
+        { label: "Freedom Age", value: freedomAge ? `${freedomAge} yrs` : "Extend plan", color: freedomAge ? "#5cffc0" : "#ff7c5c" },
+      ].map((s) => (
+        <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 20px" }}>
+          <Label>{s.label}</Label>
+          <BigNum value={s.value} color={s.color} />
+        </div>
+      ))}
     </div>
   </div>
 
-  <div class="freedom-box card">
-    <div class="freedom-emoji">🎯</div>
-
-    <div>
-      <div class="freedom-head">
-        Freedom at Age 52
-      </div>
-
-      <div class="freedom-sub">
-        Your projected savings cross the required target at age 52.
-      </div>
-    </div>
+  {/* tabs */}
+  <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 32px", overflowX: "auto" }}>
+    {TABS.map((t, i) => (
+      <button key={t} onClick={() => setActiveTab(i)} style={{
+        background: "none", border: "none",
+        borderBottom: activeTab === i ? "2px solid #e8f84a" : "2px solid transparent",
+        color: activeTab === i ? "#e8f84a" : "#666",
+        fontSize: 13, fontWeight: 600, padding: "16px 20px",
+        cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit",
+        transition: "all 0.15s",
+      }}>{t}</button>
+    ))}
   </div>
 
-  <div class="card">
+  <div style={{ padding: "28px 32px", maxWidth: 900, margin: "0 auto" }}>
 
-    <div class="section-title">
-      MONTHLY SAVINGS INPUT
-    </div>
+    {/* ── LAYER 1 ──────────────────────────────────────────────────────── */}
+    {activeTab === 0 && (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <Card>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Systematic Withdrawal Plan</div>
+          <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>
+            Monthly cashflow you need — inflation-adjusted — from today till age {lifeExpectancy}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
+            <div>
+              <Label>Needed Today</Label>
+              <BigNum value={INRfull(monthlyNeededNow)} color="#e8f84a" />
+            </div>
+            <div>
+              <Label>After Expense Shift (Age {expenseShiftAge})</Label>
+              <BigNum value={INRfull(Math.round(futureExpenses * Math.pow(1 + inflation / 100, expenseShiftAge - currentAge)))} color="#ff9f5c" />
+            </div>
+            <div>
+              <Label>At Age 60</Label>
+              <BigNum value={INRfull(monthlyNeededAt60)} color="#5cb8ff" />
+            </div>
+          </div>
+          <LineChart data={
+            swpStream.filter((_, i) => i % 12 === 0).map((v, i) => ({ age: currentAge + i, val: v }))
+          } yKey="val" xKey="age" color="#e8f84a" height={160} />
+          <div style={{ fontSize: 11, color: "#444", marginTop: 8, textAlign: "center" }}>Monthly withdrawal amount by age (inflation-adjusted)</div>
+        </Card>
 
-    <div class="slider-wrap">
-      <div class="slider-row">
-        <span>Monthly Savings</span>
-        <span class="slider-value" id="saveVal">₹10,000</span>
+        {/* corpus depletion */}
+        <Card>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Corpus Depletion Simulation</div>
+          <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>
+            If you start with the target corpus at age {currentAge}, earning {swpReturn}% annually while withdrawing
+          </div>
+          <LineChart data={corpusDepletion} yKey="bal" xKey="age" color="#5cffc0" height={160} showZero />
+          <div style={{ fontSize: 11, color: "#444", marginTop: 8, textAlign: "center" }}>Remaining corpus by age — should stay above ₹0</div>
+        </Card>
+
+        {/* controls */}
+        <Card style={{ background: "rgba(232,248,74,0.04)", border: "1px solid rgba(232,248,74,0.15)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: "#e8f84a" }}>⚙ Adjust SWP Parameters</div>
+          <Slider label="Current Monthly Expenses" value={currentExpenses} min={20000} max={80000} step={500} onChange={setCurrentExpenses} />
+          <Slider label="Future Monthly Expenses (after roommates leave)" value={futureExpenses} min={30000} max={120000} step={500} onChange={setFutureExpenses} />
+          <Slider label="Age when expenses jump" value={expenseShiftAge} min={27} max={35} onChange={setExpenseShiftAge} suffix=" yrs" />
+          <Slider label="Inflation Rate" value={inflation} min={3} max={10} step={0.5} onChange={setInflation} suffix="%" />
+          <Slider label="Corpus Return Rate (SWP)" value={swpReturn} min={6} max={14} step={0.5} onChange={setSwpReturn} suffix="%" />
+          <Slider label="Life Expectancy" value={lifeExpectancy} min={75} max={95} onChange={setLifeExpectancy} suffix=" yrs" />
+        </Card>
       </div>
+    )}
 
-      <input
-        type="range"
-        min="1000"
-        max="50000"
-        value="10000"
-        step="500"
-        id="saveSlider"
-      >
-    </div>
+    {/* ── LAYER 2 ──────────────────────────────────────────────────────── */}
+    {activeTab === 1 && (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <Card>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Present Value — What You Need Today</div>
+          <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>
+            All your future cashflows (Layer 1) discounted back to today at {discountRate}% — this is your freedom number
+          </div>
 
-    <div class="slider-wrap">
-      <div class="slider-row">
-        <span>Expected Return</span>
-        <span class="slider-value" id="returnVal">10%</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            <div style={{ background: "rgba(232,248,74,0.06)", border: "1px solid rgba(232,248,74,0.2)", borderRadius: 12, padding: 20 }}>
+              <Label>Target Corpus (Present Value)</Label>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#e8f84a", fontFamily: "monospace", lineHeight: 1 }}>{INR(targetCorpus)}</div>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>You need this working for you RIGHT NOW to be free</div>
+            </div>
+            <div style={{ background: "rgba(92,255,192,0.06)", border: "1px solid rgba(92,255,192,0.2)", borderRadius: 12, padding: 20 }}>
+              <Label>Your Current Wealth</Label>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#5cffc0", fontFamily: "monospace", lineHeight: 1 }}>{INR(currentWealth)}</div>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>NPS Tier 1 + Tier 2 + PF combined today</div>
+            </div>
+            <div style={{ background: "rgba(255,124,92,0.06)", border: "1px solid rgba(255,124,92,0.2)", borderRadius: 12, padding: 20 }}>
+              <Label>Gap to Bridge</Label>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#ff7c5c", fontFamily: "monospace", lineHeight: 1 }}>{INR(targetCorpus - currentWealth)}</div>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>How much more wealth you need to build</div>
+            </div>
+            <div style={{ background: "rgba(92,184,255,0.06)", border: "1px solid rgba(92,184,255,0.2)", borderRadius: 12, padding: 20 }}>
+              <Label>% Complete</Label>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#5cb8ff", fontFamily: "monospace", lineHeight: 1 }}>
+                {((currentWealth / targetCorpus) * 100).toFixed(1)}%
+              </div>
+              <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>Of your freedom number already accumulated</div>
+            </div>
+          </div>
+
+          {/* progress bar */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666", marginBottom: 8 }}>
+              <span>₹0</span><span>Freedom: {INR(targetCorpus)}</span>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: 12, overflow: "hidden" }}>
+              <div style={{
+                width: `${Math.min(100, (currentWealth / targetCorpus) * 100)}%`,
+                height: "100%",
+                background: "linear-gradient(90deg, #5cffc0, #e8f84a)",
+                borderRadius: 99,
+                transition: "width 0.6s ease",
+              }} />
+            </div>
+          </div>
+        </Card>
+
+        {/* breakdown */}
+        <Card>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>What Makes Up Your Target Corpus</div>
+          {[
+            { label: `Phase 1: Age ${currentAge}–${expenseShiftAge - 1} (shared rent)`, months: (expenseShiftAge - currentAge) * 12, base: currentExpenses },
+            { label: `Phase 2: Age ${expenseShiftAge}–60 (own place)`, months: (60 - expenseShiftAge) * 12, base: futureExpenses },
+            { label: `Phase 3: Age 61–${lifeExpectancy} (retirement years)`, months: (lifeExpectancy - 60) * 12, base: futureExpenses },
+          ].map((ph) => {
+            const startM = ph.label.includes("Phase 1") ? 0 : ph.label.includes("Phase 2") ? (expenseShiftAge - currentAge) * 12 : (60 - currentAge) * 12;
+            const slice = swpStream.slice(startM, startM + ph.months);
+            const pv = presentValueOfStream(slice.map((v, i) => v / Math.pow(1 + discountRate / 100 / 12, startM + i)), 0);
+            const pvActual = slice.reduce((s, cf, i) => s + cf / Math.pow(1 + discountRate / 100 / 12, startM + i + 1), 0);
+            return (
+              <div key={ph.label} style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13 }}>{ph.label}</span>
+                  <span style={{ fontSize: 13, fontFamily: "monospace", color: "#e8f84a" }}>{INR(pvActual)}</span>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: 5 }}>
+                  <div style={{ width: `${Math.min(100, (pvActual / targetCorpus) * 100)}%`, height: "100%", background: "#e8f84a", borderRadius: 99 }} />
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+
+        <Card style={{ background: "rgba(92,184,255,0.04)", border: "1px solid rgba(92,184,255,0.15)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: "#5cb8ff" }}>⚙ Adjust Discount Rate</div>
+          <Slider label="Discount Rate (your expected investment return)" value={discountRate} min={5} max={14} step={0.5} onChange={setDiscountRate} suffix="%" />
+          <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
+            Higher rate → lower corpus needed (your money grows faster). Use 8% for FD-like safety, 10-11% for equity MF.
+          </div>
+        </Card>
       </div>
+    )}
 
-      <input
-        type="range"
-        min="5"
-        max="16"
-        value="10"
-        step="0.5"
-        id="returnSlider"
-      >
-    </div>
+    {/* ── LAYER 3 ──────────────────────────────────────────────────────── */}
+    {activeTab === 2 && (
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        {/* freedom age callout */}
+        <div style={{
+          background: freedomAge ? "rgba(92,255,192,0.08)" : "rgba(255,124,92,0.08)",
+          border: `1px solid ${freedomAge ? "rgba(92,255,192,0.3)" : "rgba(255,124,92,0.3)"}`,
+          borderRadius: 16, padding: 24,
+          display: "flex", alignItems: "center", gap: 20,
+        }}>
+          <div style={{ fontSize: 56 }}>{freedomAge ? "🎯" : "⚠️"}</div>
+          <div>
+            <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Based on current plan</div>
+            {freedomAge ? (
+              <>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#5cffc0" }}>Freedom at Age {freedomAge}</div>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 4 }}>
+                  Your wealth hits {INR(targetCorpus)} when you're {freedomAge}. That's {freedomAge - currentAge} years from now.
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 28, fontWeight: 900, color: "#ff7c5c" }}>Gap Not Closed in Lifetime</div>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 4 }}>Increase savings, add lump sum, or increase return rate to close the gap.</div>
+              </>
+            )}
+          </div>
+        </div>
 
-    <div class="progress">
-      <div class="progress-fill"></div>
-    </div>
+        {/* wealth journey chart */}
+        <Card>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Your Wealth Journey</div>
+          <div style={{ fontSize: 13, color: "#666", marginBottom: 20 }}>Actual corpus growth vs target — find where lines cross</div>
 
+          {/* combined SVG */}
+          <svg viewBox="0 0 600 200" style={{ width: "100%", height: "auto", display: "block" }}>
+            <defs>
+              <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5cffc0" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#5cffc0" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+            {(() => {
+              const maxVal = Math.max(targetCorpus, finalWealth, 1);
+              const W = 600, H = 180;
+              const pts = wealthJourney.filter((_, i) => i % 2 === 0);
+              const py = (v) => H - (v / maxVal) * (H - 10) - 5;
+              const px = (i) => (i / (pts.length - 1)) * W;
+              const wealthPts = pts.map((p, i) => `${px(i)},${py(p.bal)}`).join(" ");
+              const targetY = py(targetCorpus);
+              const area = `${px(0)},${H} ` + pts.map((p, i) => `${px(i)},${py(p.bal)}`).join(" ") + ` ${px(pts.length - 1)},${H}`;
+
+              // x labels
+              const step2 = Math.ceil(pts.length / 7);
+              const xlabels = pts.filter((_, i) => i % step2 === 0 || i === pts.length - 1);
+
+              return (
+                <>
+                  <polygon points={area} fill="url(#gW)" />
+                  <polyline points={wealthPts} fill="none" stroke="#5cffc0" strokeWidth="2.5" strokeLinejoin="round" />
+                  <line x1="0" y1={targetY} x2={W} y2={targetY} stroke="#e8f84a" strokeWidth="1.5" strokeDasharray="6,4" />
+                  <text x={W - 4} y={targetY - 5} textAnchor="end" fontSize="9" fill="#e8f84a">Target: {INR(targetCorpus)}</text>
+                  {xlabels.map((p, i) => {
+                    const idx = pts.indexOf(p);
+                    return <text key={i} x={px(idx)} y={H + 18} textAnchor="middle" fontSize="9" fill="#555">{p.age}</text>;
+                  })}
+                </>
+              );
+            })()}
+          </svg>
+          <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 12 }}>
+            <span style={{ color: "#5cffc0" }}>── Your Wealth</span>
+            <span style={{ color: "#e8f84a" }}>- - Target Corpus</span>
+          </div>
+        </Card>
+
+        {/* current wealth breakdown */}
+        <Card>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Today's Wealth Breakdown</div>
+          {[
+            { label: "NPS Tier 1 (Locked till retirement)", val: 37000, color: "#5cb8ff" },
+            { label: "NPS Tier 2 (Liquid, withdrawable)", val: 86000, color: "#e8f84a" },
+            { label: "PF Balance", val: 67000, color: "#5cffc0" },
+          ].map((item) => (
+            <div key={item.label} style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                <span style={{ fontSize: 13 }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontFamily: "monospace", color: item.color }}>{INRfull(item.val)}</span>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: 5 }}>
+                <div style={{ width: `${(item.val / currentWealth) * 100}%`, height: "100%", background: item.color, borderRadius: 99 }} />
+              </div>
+            </div>
+          ))}
+        </Card>
+
+        {/* levers */}
+        <Card style={{ background: "rgba(232,248,74,0.03)", border: "1px solid rgba(232,248,74,0.15)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: "#e8f84a" }}>🔧 Pull These Levers</div>
+          <div style={{ fontSize: 12, color: "#555", marginBottom: 20 }}>Adjust to see how each choice changes your freedom age</div>
+
+          <Slider label="Monthly Savings (current: NPS Tier 2)" value={monthlySaving} min={5000} max={50000} step={500} onChange={setMonthlySaving} />
+          <Slider label="One-Time Lump Sum Investment" value={lumpSum} min={0} max={500000} step={5000} onChange={setLumpSum} />
+          <Slider label="Extra Monthly After Salary Hike" value={salaryHike} min={0} max={30000} step={500} onChange={setSalaryHike} />
+          <Slider label="Age When Hike Kicks In" value={hikeAge} min={27} max={35} onChange={setHikeAge} suffix=" yrs" />
+          <Slider label="Your Portfolio Return Rate" value={wealthReturn} min={6} max={15} step={0.5} onChange={setWealthReturn} suffix="%" />
+
+          {/* impact summary */}
+          <div style={{ marginTop: 20, padding: 16, background: "rgba(0,0,0,0.3)", borderRadius: 12 }}>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>IMPACT SUMMARY</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Wealth at Age 60", val: INR(wealthJourney.find(p => p.age === 60)?.bal ?? 0), color: "#5cffc0" },
+                { label: "Final Wealth at " + lifeExpectancy, val: INR(finalWealth), color: "#5cb8ff" },
+                { label: "Freedom Age", val: freedomAge ? `Age ${freedomAge}` : "Not reached", color: freedomAge ? "#e8f84a" : "#ff7c5c" },
+                { label: "Gap Remaining", val: INR(Math.max(0, targetCorpus - finalWealth)), color: "#ff7c5c" },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div style={{ fontSize: 11, color: "#555" }}>{s.label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: "monospace" }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* honest advice */}
+        <Card style={{ background: "rgba(255,124,92,0.04)", border: "1px solid rgba(255,124,92,0.15)" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#ff9f5c" }}>💡 Realistic Path Forward</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13, color: "#aaa", lineHeight: 1.7 }}>
+            <div>📌 <strong style={{ color: "#e0e8e2" }}>Immediate:</strong> Your ₹10k/month NPS Tier 2 is a good start. Keep it consistent — skipping it for EMIs delays your freedom.</div>
+            <div>📌 <strong style={{ color: "#e0e8e2" }}>September hike:</strong> Even ₹5,000 extra/month redirected to equity MF (not lifestyle inflation) compounds massively over time.</div>
+            <div>📌 <strong style={{ color: "#e0e8e2" }}>Lump sum power:</strong> ₹50,000 invested today at 10% = ₹8.7L in 30 years. Bonuses, gifts — park them here.</div>
+            <div>📌 <strong style={{ color: "#e0e8e2" }}>NPS Tier 2 vs MF:</strong> Consider moving systematic savings to an equity mutual fund SIP for better flexibility and potentially higher returns than NPS Tier 2.</div>
+            <div>📌 <strong style={{ color: "#e0e8e2" }}>Your dad's insight:</strong> ₹5L → ₹27k in 120 days = 16% annualised. Even 10% sustained turns small savings into life-changing corpus.</div>
+          </div>
+        </Card>
+      </div>
+    )}
   </div>
-
-  <div class="card">
-
-    <div class="section-title">
-      MATHEMATICAL INSIGHTS
-    </div>
-
-    <div class="advice">
-      <span>📌</span>
-      <span>
-        Consistency matters more than timing. Missing SIP contributions delays freedom significantly.
-      </span>
-    </div>
-
-    <div class="advice">
-      <span>📌</span>
-      <span>
-        Increasing savings after salary hikes dramatically accelerates compounding.
-      </span>
-    </div>
-
-    <div class="advice">
-      <span>💡</span>
-      <span>
-        Even a 1% increase in long-term returns creates a major difference over 30 years.
-      </span>
-    </div>
-
-  </div>
-
 </div>
+```
 
-<script>
-const saveSlider = document.getElementById('saveSlider');
-const returnSlider = document.getElementById('returnSlider');
-
-saveSlider.addEventListener('input',()=>{
-  document.getElementById('saveVal').innerText =
-    '₹' + Number(saveSlider.value).toLocaleString('en-IN');
-});
-
-returnSlider.addEventListener('input',()=>{
-  document.getElementById('returnVal').innerText =
-    returnSlider.value + '%';
-});
-</script>
-
-</body>
-</html>
+);
+}
