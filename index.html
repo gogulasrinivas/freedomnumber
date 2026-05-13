@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,6 +161,7 @@ input[type=range]{
 .freedom-sub{
   margin-top:8px;
   color:#aaa;
+  line-height:1.5;
 }
 
 .progress{
@@ -233,6 +235,7 @@ LIFETIME CASHFLOW INPUTS
 <span>Current Age</span>
 <span class="slider-value" id="ageVal">29</span>
 </div>
+
 <input type="range"
 min="18"
 max="60"
@@ -245,6 +248,7 @@ id="ageSlider">
 <span>Life Expectancy</span>
 <span class="slider-value" id="lifeVal">85</span>
 </div>
+
 <input type="range"
 min="60"
 max="100"
@@ -257,6 +261,7 @@ id="lifeSlider">
 <span>Current Savings</span>
 <span class="slider-value" id="currentVal">₹2.0 L</span>
 </div>
+
 <input type="range"
 min="0"
 max="50000000"
@@ -270,6 +275,7 @@ id="currentSlider">
 <span>Monthly Investments</span>
 <span class="slider-value" id="investVal">₹10,000</span>
 </div>
+
 <input type="range"
 min="0"
 max="500000"
@@ -283,6 +289,7 @@ id="investSlider">
 <span>Current Monthly Expenses</span>
 <span class="slider-value" id="expense1Val">₹35,000</span>
 </div>
+
 <input type="range"
 min="5000"
 max="500000"
@@ -296,6 +303,7 @@ id="expense1Slider">
 <span>Expense Shift Age</span>
 <span class="slider-value" id="shiftVal">30</span>
 </div>
+
 <input type="range"
 min="18"
 max="80"
@@ -308,6 +316,7 @@ id="shiftSlider">
 <span>Future Monthly Expenses</span>
 <span class="slider-value" id="expense2Val">₹60,000</span>
 </div>
+
 <input type="range"
 min="5000"
 max="1000000"
@@ -321,6 +330,7 @@ id="expense2Slider">
 <span>Expected Investment Return</span>
 <span class="slider-value" id="returnVal">10%</span>
 </div>
+
 <input type="range"
 min="1"
 max="25"
@@ -334,6 +344,7 @@ id="returnSlider">
 <span>Expense Inflation</span>
 <span class="slider-value" id="inflationVal">6%</span>
 </div>
+
 <input type="range"
 min="0"
 max="20"
@@ -419,21 +430,7 @@ Lifetime salary replacement projection.
 <div class="card">
 
 <div class="section-title">
-FREEDOM PROGRESS
-</div>
-
-<div class="progress">
-<div class="progress-fill"
-id="progressFill">
-</div>
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="section-title">
-WEALTH VS REQUIRED CORPUS
+WEALTH VS DECLINING LIABILITY
 </div>
 
 <canvas id="chart"
@@ -455,18 +452,6 @@ function goTo(i){
 document.getElementById('track').style.transform =
 `translateX(-${i*100}vw)`;
 }
-
-const sliders = [
-'ageSlider',
-'lifeSlider',
-'currentSlider',
-'investSlider',
-'expense1Slider',
-'shiftSlider',
-'expense2Slider',
-'returnSlider',
-'inflationSlider'
-];
 
 function formatINR(num){
 
@@ -534,51 +519,20 @@ const inflationRate =
 const totalMonths =
 (life-age)*12;
 
-// PRESENT VALUE OF ALL FUTURE CASHFLOWS
-
-let requiredCorpus = 0;
-
-for(let m=1; m<=totalMonths; m++){
-
-const currentYear =
-age + (m/12);
-
-let expense =
-expense1;
-
-if(currentYear >= shiftAge){
-expense = expense2;
-}
-
-const inflatedExpense =
-expense *
-Math.pow(
-1+inflationRate,
-m
-);
-
-const discountedCashflow =
-inflatedExpense /
-Math.pow(
-1+monthlyRate,
-m
-);
-
-requiredCorpus +=
-discountedCashflow;
-
-}
-
-// WEALTH BUILDING
-
 let wealth =
 current;
 
 let freedomAge = null;
 
-let yearlyData = [];
+let wealthData = [];
+
+let liabilityData = [];
+
+// YEARLY SIMULATION
 
 for(let y=age; y<=life; y++){
+
+// GROW WEALTH
 
 for(let m=0; m<12; m++){
 
@@ -592,22 +546,74 @@ monthlyInvestment;
 
 }
 
-yearlyData.push({
+// REMAINING LIABILITY
+
+let remainingCorpus = 0;
+
+const currentMonthOffset =
+(y-age)*12;
+
+for(
+let futureMonth=currentMonthOffset;
+futureMonth<=totalMonths;
+futureMonth++
+){
+
+const futureAge =
+age + (futureMonth/12);
+
+let expense =
+expense1;
+
+if(futureAge >= shiftAge){
+expense = expense2;
+}
+
+const inflatedExpense =
+expense *
+Math.pow(
+1+inflationRate,
+futureMonth
+);
+
+const discountedCashflow =
+inflatedExpense /
+Math.pow(
+1+monthlyRate,
+futureMonth-currentMonthOffset
+);
+
+remainingCorpus +=
+discountedCashflow;
+
+}
+
+wealthData.push({
 age:y,
 wealth:wealth
 });
 
+liabilityData.push({
+age:y,
+corpus:remainingCorpus
+});
+
 if(
 !freedomAge &&
-wealth >= requiredCorpus
+wealth >= remainingCorpus
 ){
 freedomAge = y;
 }
 
 }
 
+// CURRENT CORPUS TODAY
+
+const currentCorpus =
+liabilityData[0].corpus;
+
 document.getElementById('corpusOut').innerText =
-formatINR(requiredCorpus);
+formatINR(currentCorpus);
 
 document.getElementById('freedomOut').innerText =
 freedomAge || '—';
@@ -618,7 +624,7 @@ document.getElementById('headline').innerText =
 `Freedom at Age ${freedomAge}`;
 
 document.getElementById('subline').innerText =
-'Your investments can replace your future salary needs.';
+'Your growing assets eventually exceed your declining future liabilities.';
 
 }else{
 
@@ -630,23 +636,14 @@ document.getElementById('subline').innerText =
 
 }
 
-const progress =
-Math.min(
-100,
-(wealth/requiredCorpus)*100
-);
-
-document.getElementById('progressFill').style.width =
-progress + '%';
-
 drawChart(
-yearlyData,
-requiredCorpus
+wealthData,
+liabilityData
 );
 
 }
 
-function drawChart(data,target){
+function drawChart(wealthData,liabilityData){
 
 const canvas =
 document.getElementById('chart');
@@ -661,11 +658,15 @@ canvas.width,
 canvas.height
 );
 
+const allValues = [
+...wealthData.map(d=>d.wealth),
+...liabilityData.map(d=>d.corpus)
+];
+
 const max =
-Math.max(
-target,
-...data.map(d=>d.wealth)
-);
+Math.max(...allValues);
+
+// WEALTH LINE
 
 ctx.beginPath();
 
@@ -674,10 +675,10 @@ ctx.strokeStyle =
 
 ctx.lineWidth = 4;
 
-data.forEach((d,i)=>{
+wealthData.forEach((d,i)=>{
 
 const x =
-(i/(data.length-1))
+(i/(wealthData.length-1))
 *canvas.width;
 
 const y =
@@ -695,23 +696,35 @@ ctx.lineTo(x,y);
 
 ctx.stroke();
 
-// TARGET LINE
-
-const targetY =
-canvas.height -
-((target/max)
-*(canvas.height-30));
+// LIABILITY LINE
 
 ctx.beginPath();
-
-ctx.setLineDash([8,8]);
 
 ctx.strokeStyle =
 '#ff4d4d';
 
-ctx.moveTo(0,targetY);
+ctx.lineWidth = 3;
 
-ctx.lineTo(canvas.width,targetY);
+ctx.setLineDash([8,8]);
+
+liabilityData.forEach((d,i)=>{
+
+const x =
+(i/(liabilityData.length-1))
+*canvas.width;
+
+const y =
+canvas.height -
+((d.corpus/max)
+*(canvas.height-30));
+
+if(i===0){
+ctx.moveTo(x,y);
+}else{
+ctx.lineTo(x,y);
+}
+
+});
 
 ctx.stroke();
 
@@ -719,11 +732,19 @@ ctx.setLineDash([]);
 
 }
 
-sliders.forEach(id=>{
+[
+ageSlider,
+lifeSlider,
+currentSlider,
+investSlider,
+expense1Slider,
+shiftSlider,
+expense2Slider,
+returnSlider,
+inflationSlider
+].forEach(slider=>{
 
-document
-.getElementById(id)
-.addEventListener(
+slider.addEventListener(
 'input',
 calculate
 );
