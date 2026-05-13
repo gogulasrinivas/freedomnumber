@@ -13,7 +13,6 @@
   --border:rgba(255,255,255,.08);
   --red:#ff4d4d;
   --green:#57ffb1;
-  --amber:#ffb84d;
   --text:#f4f4f4;
   --muted:#8c8c8c;
 }
@@ -31,30 +30,10 @@ body{
   overflow:hidden;
 }
 
-.bg-glow{
-  position:fixed;
-  width:500px;
-  height:500px;
-  background:radial-gradient(circle,
-    rgba(255,77,77,.16),
-    transparent 70%);
-  top:-120px;
-  right:-120px;
-  filter:blur(40px);
-  z-index:-1;
-  animation:floatGlow 8s ease-in-out infinite;
-}
-
-@keyframes floatGlow{
-  0%{transform:translateY(0px);}
-  50%{transform:translateY(40px);}
-  100%{transform:translateY(0px);}
-}
-
 .slider-track{
   display:flex;
   width:200vw;
-  transition:transform .45s cubic-bezier(.22,.61,.36,1);
+  transition:transform .45s ease;
 }
 
 .layer{
@@ -68,10 +47,9 @@ body{
   position:sticky;
   top:0;
   z-index:100;
-  background:rgba(10,10,10,.82);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
+  background:#0b0b0b;
   padding:16px;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
 
 .topbar-title{
@@ -89,10 +67,10 @@ body{
 .toggle-btn{
   flex:1;
   border:none;
-  padding:11px;
   border-radius:14px;
-  background:#1a1a1a;
-  color:var(--muted);
+  padding:12px;
+  background:#161616;
+  color:#888;
   font-weight:700;
 }
 
@@ -104,7 +82,7 @@ body{
 .swipe-hint{
   margin-top:10px;
   font-size:12px;
-  color:var(--muted);
+  color:#777;
 }
 
 .layer-body{
@@ -115,12 +93,10 @@ body{
 
 .card{
   background:var(--card);
-  backdrop-filter:blur(18px);
   border:1px solid var(--border);
   border-radius:22px;
   padding:20px;
   margin-bottom:18px;
-  box-shadow:0 10px 40px rgba(0,0,0,.35);
 }
 
 .section-title{
@@ -131,14 +107,13 @@ body{
 }
 
 .slider-wrap{
-  margin-bottom:20px;
+  margin-bottom:22px;
 }
 
 .slider-row{
   display:flex;
   justify-content:space-between;
   margin-bottom:8px;
-  font-size:14px;
 }
 
 .slider-value{
@@ -153,7 +128,7 @@ input[type=range]{
 
 .output-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  grid-template-columns:1fr 1fr;
   gap:12px;
 }
 
@@ -161,13 +136,13 @@ input[type=range]{
   background:rgba(255,255,255,.03);
   border:1px solid rgba(255,255,255,.06);
   border-radius:18px;
-  padding:16px;
+  padding:18px;
 }
 
 .stat-label{
   font-size:11px;
-  color:var(--muted);
-  margin-bottom:8px;
+  color:#888;
+  margin-bottom:10px;
 }
 
 .stat-value{
@@ -191,20 +166,19 @@ input[type=range]{
 }
 
 .freedom-head{
-  font-size:28px;
+  font-size:30px;
   font-weight:800;
   color:var(--red);
 }
 
 .freedom-sub{
-  margin-top:5px;
+  margin-top:6px;
   color:#aaa;
-  font-size:14px;
 }
 
 .progress{
   height:14px;
-  background:#1f1f1f;
+  background:#1b1b1b;
   border-radius:999px;
   overflow:hidden;
   margin-top:14px;
@@ -212,14 +186,17 @@ input[type=range]{
 
 .progress-fill{
   height:100%;
-  background:linear-gradient(90deg,var(--green),var(--red));
   width:0%;
-  transition:width .5s ease;
+  background:linear-gradient(
+    90deg,
+    #57ffb1,
+    #ff4d4d
+  );
 }
 
 canvas{
   width:100%;
-  margin-top:14px;
+  margin-top:16px;
   background:rgba(255,255,255,.02);
   border-radius:14px;
 }
@@ -229,11 +206,10 @@ canvas{
 
 <body>
 
-<div class="bg-glow"></div>
-
 <div class="slider-track" id="track">
 
 <!-- INPUT -->
+
 <div class="layer">
 
 <div class="topbar">
@@ -243,13 +219,17 @@ FREEDOM MODEL
 </div>
 
 <div class="layer-toggle">
-<button class="toggle-btn active" onclick="goTo(0)">
+
+<button class="toggle-btn active"
+onclick="goTo(0)">
 INPUT
 </button>
 
-<button class="toggle-btn" onclick="goTo(1)">
+<button class="toggle-btn"
+onclick="goTo(1)">
 OUTPUT
 </button>
+
 </div>
 
 <div class="swipe-hint">
@@ -271,7 +251,12 @@ FINANCIAL INPUTS
 <span>Current Age</span>
 <span class="slider-value" id="ageVal">27</span>
 </div>
-<input type="range" min="18" max="60" value="27" id="ageSlider">
+
+<input type="range"
+min="18"
+max="60"
+value="27"
+id="ageSlider">
 </div>
 
 <div class="slider-wrap">
@@ -279,7 +264,12 @@ FINANCIAL INPUTS
 <span>Life Expectancy</span>
 <span class="slider-value" id="lifeVal">85</span>
 </div>
-<input type="range" min="60" max="100" value="85" id="lifeSlider">
+
+<input type="range"
+min="60"
+max="100"
+value="85"
+id="lifeSlider">
 </div>
 
 <div class="slider-wrap">
@@ -287,7 +277,13 @@ FINANCIAL INPUTS
 <span>Current Savings</span>
 <span class="slider-value" id="currentVal">₹2.0 L</span>
 </div>
-<input type="range" min="0" max="50000000" value="200000" step="50000" id="currentSlider">
+
+<input type="range"
+min="0"
+max="50000000"
+value="200000"
+step="50000"
+id="currentSlider">
 </div>
 
 <div class="slider-wrap">
@@ -295,15 +291,27 @@ FINANCIAL INPUTS
 <span>Monthly Investments</span>
 <span class="slider-value" id="investVal">₹25,000</span>
 </div>
-<input type="range" min="0" max="500000" value="25000" step="1000" id="investSlider">
+
+<input type="range"
+min="0"
+max="500000"
+value="25000"
+step="1000"
+id="investSlider">
 </div>
 
 <div class="slider-wrap">
 <div class="slider-row">
-<span>Monthly Expenses (Current)</span>
+<span>Current Monthly Expenses</span>
 <span class="slider-value" id="expense1Val">₹35,000</span>
 </div>
-<input type="range" min="5000" max="500000" value="35000" step="5000" id="expense1Slider">
+
+<input type="range"
+min="5000"
+max="500000"
+value="35000"
+step="5000"
+id="expense1Slider">
 </div>
 
 <div class="slider-wrap">
@@ -311,15 +319,26 @@ FINANCIAL INPUTS
 <span>Expense Shift Age</span>
 <span class="slider-value" id="shiftVal">30</span>
 </div>
-<input type="range" min="18" max="70" value="30" step="1" id="shiftSlider">
+
+<input type="range"
+min="18"
+max="70"
+value="30"
+id="shiftSlider">
 </div>
 
 <div class="slider-wrap">
 <div class="slider-row">
-<span>Monthly Expenses (After Shift)</span>
+<span>Future Monthly Expenses</span>
 <span class="slider-value" id="expense2Val">₹60,000</span>
 </div>
-<input type="range" min="5000" max="1000000" value="60000" step="5000" id="expense2Slider">
+
+<input type="range"
+min="5000"
+max="1000000"
+value="60000"
+step="5000"
+id="expense2Slider">
 </div>
 
 <div class="slider-wrap">
@@ -327,7 +346,13 @@ FINANCIAL INPUTS
 <span>Expected Investment Return</span>
 <span class="slider-value" id="returnVal">10%</span>
 </div>
-<input type="range" min="1" max="25" value="10" step="0.1" id="returnSlider">
+
+<input type="range"
+min="1"
+max="25"
+value="10"
+step="0.1"
+id="returnSlider">
 </div>
 
 <div class="slider-wrap">
@@ -335,7 +360,13 @@ FINANCIAL INPUTS
 <span>Expense Inflation</span>
 <span class="slider-value" id="inflationVal">6%</span>
 </div>
-<input type="range" min="0" max="20" value="6" step="0.1" id="inflationSlider">
+
+<input type="range"
+min="0"
+max="20"
+value="6"
+step="0.1"
+id="inflationSlider">
 </div>
 
 <div class="slider-wrap">
@@ -343,7 +374,13 @@ FINANCIAL INPUTS
 <span>Safe Withdrawal Rate</span>
 <span class="slider-value" id="swrVal">4%</span>
 </div>
-<input type="range" min="1" max="10" value="4" step="0.1" id="swrSlider">
+
+<input type="range"
+min="1"
+max="10"
+value="4"
+step="0.1"
+id="swrSlider">
 </div>
 
 </div>
@@ -353,6 +390,7 @@ FINANCIAL INPUTS
 </div>
 
 <!-- OUTPUT -->
+
 <div class="layer">
 
 <div class="topbar">
@@ -362,13 +400,17 @@ FREEDOM MODEL
 </div>
 
 <div class="layer-toggle">
-<button class="toggle-btn" onclick="goTo(0)">
+
+<button class="toggle-btn"
+onclick="goTo(0)">
 INPUT
 </button>
 
-<button class="toggle-btn active" onclick="goTo(1)">
+<button class="toggle-btn active"
+onclick="goTo(1)">
 OUTPUT
 </button>
+
 </div>
 
 <div class="swipe-hint">
@@ -385,25 +427,8 @@ OUTPUT
 <div class="stat-label">
 REQUIRED CORPUS
 </div>
+
 <div class="stat-value" id="targetOut">
-₹0
-</div>
-</div>
-
-<div class="stat">
-<div class="stat-label">
-REQUIRED MONTHLY INVESTMENT
-</div>
-<div class="stat-value" id="wealthOut">
-₹0
-</div>
-</div>
-
-<div class="stat">
-<div class="stat-label">
-FREEDOM GAP
-</div>
-<div class="stat-value" id="gapOut">
 ₹0
 </div>
 </div>
@@ -412,6 +437,7 @@ FREEDOM GAP
 <div class="stat-label">
 FREEDOM AGE
 </div>
+
 <div class="stat-value" id="freedomOut">
 —
 </div>
@@ -420,37 +446,52 @@ FREEDOM AGE
 </div>
 
 <div class="freedom-box">
+
 <div class="freedom-emoji">
 🎯
 </div>
 
 <div>
-<div class="freedom-head" id="headline">
+
+<div class="freedom-head"
+id="headline">
 Calculating...
 </div>
 
-<div class="freedom-sub" id="subline">
-Projected financial independence based on your inputs.
+<div class="freedom-sub"
+id="subline">
+Projected financial freedom based on your lifestyle.
 </div>
+
 </div>
+
 </div>
 
 <div class="card">
+
 <div class="section-title">
 FREEDOM PROGRESS
 </div>
 
 <div class="progress">
-<div class="progress-fill" id="progressFill"></div>
+<div class="progress-fill"
+id="progressFill">
 </div>
 </div>
 
+</div>
+
 <div class="card">
+
 <div class="section-title">
 WEALTH VS TARGET
 </div>
 
-<canvas id="chart" width="800" height="220"></canvas>
+<canvas id="chart"
+width="800"
+height="220">
+</canvas>
+
 </div>
 
 </div>
@@ -466,120 +507,123 @@ document.getElementById('track').style.transform =
 `translateX(-${i * 100}vw)`;
 }
 
-const ageSlider=document.getElementById('ageSlider');
-const lifeSlider=document.getElementById('lifeSlider');
-const currentSlider=document.getElementById('currentSlider');
-const investSlider=document.getElementById('investSlider');
-const expense1Slider=document.getElementById('expense1Slider');
-const shiftSlider=document.getElementById('shiftSlider');
-const expense2Slider=document.getElementById('expense2Slider');
-const returnSlider=document.getElementById('returnSlider');
-const inflationSlider=document.getElementById('inflationSlider');
-const swrSlider=document.getElementById('swrSlider');
+const ageSlider =
+document.getElementById('ageSlider');
+
+const lifeSlider =
+document.getElementById('lifeSlider');
+
+const currentSlider =
+document.getElementById('currentSlider');
+
+const investSlider =
+document.getElementById('investSlider');
+
+const expense1Slider =
+document.getElementById('expense1Slider');
+
+const shiftSlider =
+document.getElementById('shiftSlider');
+
+const expense2Slider =
+document.getElementById('expense2Slider');
+
+const returnSlider =
+document.getElementById('returnSlider');
+
+const inflationSlider =
+document.getElementById('inflationSlider');
+
+const swrSlider =
+document.getElementById('swrSlider');
 
 function formatINR(num){
 
 if(num >= 10000000){
-return '₹' + (num / 10000000).toFixed(2) + ' Cr';
+return '₹' +
+(num / 10000000).toFixed(2)
++ ' Cr';
 }
 
 if(num >= 100000){
-return '₹' + (num / 100000).toFixed(1) + ' L';
+return '₹' +
+(num / 100000).toFixed(1)
++ ' L';
 }
 
-return '₹' + Math.round(num).toLocaleString('en-IN');
+return '₹' +
+Math.round(num)
+.toLocaleString('en-IN');
 
 }
 
 function calculate(){
 
-const age=Number(ageSlider.value);
-const life=Number(lifeSlider.value);
-const current=Number(currentSlider.value);
-const monthlyInvestment=Number(investSlider.value);
-const expense1=Number(expense1Slider.value);
-const shiftAge=Number(shiftSlider.value);
-const expense2=Number(expense2Slider.value);
-const returnRate=Number(returnSlider.value);
-const inflation=Number(inflationSlider.value);
-const swr=Number(swrSlider.value);
+const age =
+Number(ageSlider.value);
 
-// UI values
+const life =
+Number(lifeSlider.value);
 
-document.getElementById('ageVal').innerText=age;
-document.getElementById('lifeVal').innerText=life;
-document.getElementById('currentVal').innerText=formatINR(current);
-document.getElementById('investVal').innerText=formatINR(monthlyInvestment);
-document.getElementById('expense1Val').innerText=formatINR(expense1);
-document.getElementById('shiftVal').innerText=shiftAge;
-document.getElementById('expense2Val').innerText=formatINR(expense2);
-document.getElementById('returnVal').innerText=returnRate + '%';
-document.getElementById('inflationVal').innerText=inflation + '%';
-document.getElementById('swrVal').innerText=swr + '%';
+const current =
+Number(currentSlider.value);
 
-// inflation adjusted future expense
+const monthlyInvestment =
+Number(investSlider.value);
 
-const yearsToShift = Math.max(0, shiftAge - age);
+const expense1 =
+Number(expense1Slider.value);
 
-const inflatedExpense =
+const shiftAge =
+Number(shiftSlider.value);
+
+const expense2 =
+Number(expense2Slider.value);
+
+const returnRate =
+Number(returnSlider.value);
+
+const inflation =
+Number(inflationSlider.value);
+
+const swr =
+Number(swrSlider.value);
+
+document.getElementById('ageVal').innerText = age;
+document.getElementById('lifeVal').innerText = life;
+document.getElementById('currentVal').innerText = formatINR(current);
+document.getElementById('investVal').innerText = formatINR(monthlyInvestment);
+document.getElementById('expense1Val').innerText = formatINR(expense1);
+document.getElementById('shiftVal').innerText = shiftAge;
+document.getElementById('expense2Val').innerText = formatINR(expense2);
+document.getElementById('returnVal').innerText = returnRate + '%';
+document.getElementById('inflationVal').innerText = inflation + '%';
+document.getElementById('swrVal').innerText = swr + '%';
+
+const yearsToShift =
+Math.max(0,
+shiftAge - age);
+
+const futureExpense =
 expense2 *
 Math.pow(
 1 + inflation / 100,
 yearsToShift
 );
 
-// FIRE corpus
-
-const annualExpense = inflatedExpense * 12;
+const annualExpense =
+futureExpense * 12;
 
 const targetCorpus =
 annualExpense /
 (swr / 100);
 
-// years remaining to freedom
+let wealth =
+current;
 
-const yearsToFreedom = Math.max(1, life - age);
-
-// future value of current savings
-
-const futureValueCurrentSavings =
-current *
-Math.pow(
-1 + (returnRate / 100),
-yearsToFreedom
-);
-
-// remaining corpus needed
-
-const remainingCorpus = Math.max(
-0,
-targetCorpus - futureValueCurrentSavings
-);
-
-// monthly return rate
-
-const monthlyRate =
-(returnRate / 100) / 12;
-
-const totalMonths = yearsToFreedom * 12;
-
-let requiredMonthlyInvestment = 0;
-
-if(remainingCorpus > 0 && monthlyRate > 0){
-
-requiredMonthlyInvestment =
-remainingCorpus * monthlyRate /
-(
-Math.pow(1 + monthlyRate, totalMonths) - 1
-);
-
-}
-
-// wealth projection path using required SIP
-
-let wealth = current;
 let yearlyData = [];
-let freedomAge = life;
+
+let freedomAge = null;
 
 for(let y = age; y <= life; y++){
 
@@ -588,10 +632,10 @@ for(let m = 0; m < 12; m++){
 wealth =
 (
 wealth *
-(1 + monthlyRate)
+(1 + ((returnRate / 100) / 12))
 )
 +
-requiredMonthlyInvestment;
+monthlyInvestment;
 
 }
 
@@ -600,46 +644,41 @@ age:y,
 wealth:wealth
 });
 
+if(
+!freedomAge &&
+wealth >= targetCorpus
+){
+freedomAge = y;
 }
 
-const gap = Math.max(
-0,
-remainingCorpus
-);
-
-// outputs
+}
 
 document.getElementById('targetOut').innerText =
 formatINR(targetCorpus);
 
-document.getElementById('wealthOut').innerText =
-formatINR(requiredMonthlyInvestment) + '/mo';
-
-document.getElementById('gapOut').innerText =
-formatINR(gap);
-
 document.getElementById('freedomOut').innerText =
-life;
+freedomAge || '—';
 
-// headline
+if(freedomAge){
 
 document.getElementById('headline').innerText =
-`Invest ${formatINR(requiredMonthlyInvestment)}/month`;
+`Freedom at Age ${freedomAge}`;
 
 document.getElementById('subline').innerText =
-`Required monthly investment to sustain your future lifestyle by age ${life}.`;else{
+'Your investments can sustain your projected lifestyle.';
+
+}else{
 
 document.getElementById('headline').innerText =
 'Freedom Not Reached';
 
 document.getElementById('subline').innerText =
-'Increase investments, reduce expenses, or adjust assumptions.';
+'Increase investments or reduce future expenses.';
 
 }
 
-// progress
-
-const progress = Math.min(
+const progress =
+Math.min(
 100,
 (wealth / targetCorpus) * 100
 );
@@ -647,39 +686,48 @@ const progress = Math.min(
 document.getElementById('progressFill').style.width =
 progress + '%';
 
-// chart
-
-drawChart(yearlyData,targetCorpus);
+drawChart(
+yearlyData,
+targetCorpus
+);
 
 }
 
 function drawChart(data,target){
 
-const canvas=document.getElementById('chart');
-const ctx=canvas.getContext('2d');
+const canvas =
+document.getElementById('chart');
 
-const width=canvas.width;
-const height=canvas.height;
+const ctx =
+canvas.getContext('2d');
+
+const width =
+canvas.width;
+
+const height =
+canvas.height;
 
 ctx.clearRect(0,0,width,height);
 
-const max=Math.max(
+const max =
+Math.max(
 target,
 ...data.map(d=>d.wealth)
 );
 
 ctx.beginPath();
-ctx.strokeStyle='#57ffb1';
-ctx.lineWidth=4;
 
-// wealth line
+ctx.strokeStyle =
+'#57ffb1';
+
+ctx.lineWidth = 4;
 
 data.forEach((d,i)=>{
 
-const x=
+const x =
 (i/(data.length-1))*width;
 
-const y=
+const y =
 height -
 ((d.wealth/max)*(height-30));
 
@@ -693,32 +741,76 @@ ctx.lineTo(x,y);
 
 ctx.stroke();
 
-// target line
-
-const targetY=
+const targetY =
 height -
 ((target/max)*(height-30));
 
 ctx.beginPath();
+
 ctx.setLineDash([8,8]);
-ctx.strokeStyle='#ffb84d';
+
+ctx.strokeStyle =
+'#ffb84d';
+
 ctx.moveTo(0,targetY);
+
 ctx.lineTo(width,targetY);
+
 ctx.stroke();
+
 ctx.setLineDash([]);
 
 }
 
-ageSlider.addEventListener('input',calculate);
-lifeSlider.addEventListener('input',calculate);
-currentSlider.addEventListener('input',calculate);
-investSlider.addEventListener('input',calculate);
-expense1Slider.addEventListener('input',calculate);
-shiftSlider.addEventListener('input',calculate);
-expense2Slider.addEventListener('input',calculate);
-returnSlider.addEventListener('input',calculate);
-inflationSlider.addEventListener('input',calculate);
-swrSlider.addEventListener('input',calculate);
+ageSlider.addEventListener(
+'input',
+calculate
+);
+
+lifeSlider.addEventListener(
+'input',
+calculate
+);
+
+currentSlider.addEventListener(
+'input',
+calculate
+);
+
+investSlider.addEventListener(
+'input',
+calculate
+);
+
+expense1Slider.addEventListener(
+'input',
+calculate
+);
+
+shiftSlider.addEventListener(
+'input',
+calculate
+);
+
+expense2Slider.addEventListener(
+'input',
+calculate
+);
+
+returnSlider.addEventListener(
+'input',
+calculate
+);
+
+inflationSlider.addEventListener(
+'input',
+calculate
+);
+
+swrSlider.addEventListener(
+'input',
+calculate
+);
 
 calculate();
 
